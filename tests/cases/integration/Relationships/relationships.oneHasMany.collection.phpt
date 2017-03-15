@@ -279,18 +279,18 @@ class RelationshipsOneHasManyCollectionTest extends DataTestCase
 			Assert::count(2, iterator_to_array($this->books));
 			Assert::count(2, $this->books->getEntitiesForPersistence());
 
-			$bookB = $this->getExistingBook(2); // THIS FIRES UNNECESSARY QUERY: SELECT * FROM authors WHERE id IN (1)
+			$bookB = $this->getExistingBook(2);
 			Assert::count(2, iterator_to_array($this->books));
 			Assert::count(2, $this->books->getEntitiesForPersistence());
 		});
 
 		if ($queries) {
-			Assert::count(4, $queries); // SELECT one, SELECT its author, SELECT all, SELECT 2 book's author
+			Assert::count(3, $queries); // SELECT one, SELECT its author, SELECT all
 		}
 	}
 
 
-	public function testFetchDerivedCollection()
+	public function testFetchDerivedCollectionA()
 	{
 		$queries = $this->getQueries(function () {
 			Assert::count(0, $this->books->getEntitiesForPersistence());
@@ -298,11 +298,27 @@ class RelationshipsOneHasManyCollectionTest extends DataTestCase
 			$this->books->add($this->createBook());
 			Assert::count(1, $this->books->getEntitiesForPersistence());
 
-			$this->books->get()->fetchAll();
+			$this->books->get(); // already loads the relationship, because there is one already added value
+			Assert::count(3, $this->books->getEntitiesForPersistence());
+		});
+
+		if ($queries) {
+			Assert::count(1, $queries); // SELECT ALL
+		}
+	}
+
+
+	public function testFetchDerivedCollectionB()
+	{
+		$queries = $this->getQueries(function () {
+			Assert::count(0, $this->books->getEntitiesForPersistence());
+
+			$this->books->get()->limitBy(1)->fetchAll();
 			if ($this->section === Helper::SECTION_ARRAY) {
 				// array collection loads the book relationships during filtering the related books
-				Assert::count(3, $this->books->getEntitiesForPersistence());
+				Assert::count(2, $this->books->getEntitiesForPersistence());
 			} else {
+				// one book from releationship
 				Assert::count(1, $this->books->getEntitiesForPersistence());
 			}
 		});
@@ -320,7 +336,7 @@ class RelationshipsOneHasManyCollectionTest extends DataTestCase
 			Assert::count(2, iterator_to_array($this->books));
 			Assert::count(2, $this->books->getEntitiesForPersistence());
 
-			$bookA = $this->getExistingBook(1); // THIS FIRES UNNECESSARY QUERY: SELECT * FROM authors WHERE id IN (1)
+			$bookA = $this->getExistingBook(1);
 			$bookA->author = $this->authorB;
 			Assert::count(1, iterator_to_array($this->books));
 			Assert::count(1, $this->books->getEntitiesForPersistence());
@@ -335,7 +351,7 @@ class RelationshipsOneHasManyCollectionTest extends DataTestCase
 		});
 
 		if ($queries) {
-			Assert::count(5, $queries); // SELECT all, SELECT 1 book's author, BEGIN, UPDATE, COMMIT
+			Assert::count(4, $queries); // SELECT all, BEGIN, UPDATE, COMMIT
 		}
 	}
 

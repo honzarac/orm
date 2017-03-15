@@ -45,7 +45,7 @@ class ManyHasOne extends HasOne
 	}
 
 
-	protected function initReverseRelationship($newEntity)
+	protected function initRelationship($newEntity)
 	{
 		$key = $this->metadata->relationship->property;
 		if (!$key || !$newEntity) {
@@ -53,7 +53,9 @@ class ManyHasOne extends HasOne
 		}
 
 		$this->updatingReverseRelationship = true;
-		$newEntity->getValue($key)->initReverseRelationship($this->parent);
+		/** @var HasMany $relationship */
+		$relationship = $newEntity->getValue($key);
+		$relationship->initReverseRelationship($this->parent);
 		$this->updatingReverseRelationship = false;
 	}
 }

@@ -20,7 +20,7 @@ class OneHasMany extends HasMany
 			return iterator_to_array($this->getIterator());
 
 		} else {
-			$entities = $this->added + $this->toAdd;
+			$entities = $this->partialyLoaded + $this->added + $this->toAdd;
 
 			foreach ($this->toRemove as $hash => $remove) {
 				if ($remove->isPersisted()) {

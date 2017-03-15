@@ -82,25 +82,25 @@ class RelationshipMapperOneHasMany extends Object implements IRelationshipMapper
 		}
 
 		if ($builder->hasLimitOffsetClause() && count($values) > 1) {
-			$data = $this->fetchByTwoPassStrategy($builder, $values);
+			$data = $this->fetchByTwoPassStrategy($builder, $values, $parent);
 		} else {
-			$data = $this->fetchByOnePassStrategy($builder, stripos($cacheKey, 'JOIN') !== false, $values);
+			$data = $this->fetchByOnePassStrategy($builder, stripos($cacheKey, 'JOIN') !== false, $values, $parent);
 		}
 
 		return $data;
 	}
 
 
-	protected function fetchByOnePassStrategy(QueryBuilder $builder, $hasJoin, array $values)
+	protected function fetchByOnePassStrategy(QueryBuilder $builder, $hasJoin, array $values, IEntity $parent)
 	{
 		$builder = clone $builder;
 		$builder->addSelect(($hasJoin ? 'DISTINCT ' : '') . '%table.*', $builder->getFromAlias());
 		$builder->andWhere('%column IN %any', "{$builder->getFromAlias()}.{$this->joinStorageKey}", $values);
-		return $this->queryAndFetchEntities($builder->getQuerySql(), $builder->getQueryParameters());
+		return $this->queryAndFetchEntities($builder->getQuerySql(), $builder->getQueryParameters(), $parent);
 	}
 
 
-	protected function fetchByTwoPassStrategy(QueryBuilder $builder, array $values): EntityIterator
+	protected function fetchByTwoPassStrategy(QueryBuilder $builder, array $values, IEntity $parent): EntityIterator
 	{
 		$builder = clone $builder;
 		$targetPrimaryKey = $this->targetMapper->getStorageReflection()->getStoragePrimaryKey();
@@ -160,9 +160,11 @@ class RelationshipMapperOneHasMany extends Object implements IRelationshipMapper
 		}
 
 		$entities = [];
+		$parentRelationshipProperty = $this->metadata->relationship->property;
 		foreach ($map as $joiningStorageKey => $primaryValues) {
 			foreach ($primaryValues as $primaryValue) {
 				$entity = $entitiesResult[$primaryValue];
+				$entity->getProperty($parentRelationshipProperty)->set($parent); // init relationship to the parent entity
 				$entities[$entity->getRawValue($this->metadata->relationship->property)][] = $entity;
 			}
 		}
@@ -171,12 +173,14 @@ class RelationshipMapperOneHasMany extends Object implements IRelationshipMapper
 	}
 
 
-	private function queryAndFetchEntities($query, $args): EntityIterator
+	private function queryAndFetchEntities($query, $args, IEntity $parent): EntityIterator
 	{
+		$parentRelationshipProperty = $this->metadata->relationship->property;
 		$result = $this->connection->queryArgs($query, $args);
 		$entities = [];
 		while (($data = $result->fetch())) {
 			$entity = $this->targetRepository->hydrateEntity($data->toArray());
+			$entity->getProperty($parentRelationshipProperty)->set($parent); // init relationship to the parent entity
 			$entities[$entity->getRawValue($this->metadata->relationship->property)][] = $entity;
 		}
 

@@ -100,12 +100,12 @@ class RelationshipMapperManyHasMany extends Object implements IRelationshipMappe
 			return $data;
 		}
 
-		$data = $this->fetchByTwoPassStrategy($builder, $values);
+		$data = $this->fetchByTwoPassStrategy($builder, $values, $parent);
 		return $data;
 	}
 
 
-	private function fetchByTwoPassStrategy(QueryBuilder $builder, array $values)
+	private function fetchByTwoPassStrategy(QueryBuilder $builder, array $values, IEntity $parent)
 	{
 		$sourceTable = $builder->getFromAlias();
 		$targetTable = QueryBuilderHelper::getAlias($this->joinTable);
@@ -153,9 +153,13 @@ class RelationshipMapperManyHasMany extends Object implements IRelationshipMappe
 		$entitiesResult = $this->targetRepository->findBy(['id' => array_keys($values)]);
 		$entities = $entitiesResult->fetchPairs('id', null);
 
+		$parentRelationshipProperty = $this->metadata->relationship->property;
+
 		$grouped = [];
 		foreach ($result as $row) {
-			$grouped[$row->{$this->primaryKeyFrom}][] = $entities[$row->{$this->primaryKeyTo}];
+			$entity = $entities[$row->{$this->primaryKeyTo}];
+			$entity->{$parentRelationshipProperty}->initReverseRelationship($parent); // init relationship to the parent entity
+			$grouped[$row->{$this->primaryKeyFrom}][] = $entity;
 		}
 
 		return new EntityIterator($grouped);

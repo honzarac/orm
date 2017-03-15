@@ -117,7 +117,7 @@ abstract class HasOne extends Object implements IRelationshipContainer
 			$this->updateRelationship($oldValue, $value, $allowNull);
 
 		} else {
-			$this->initReverseRelationship($value);
+			$this->initRelationship($value);
 		}
 
 		$this->primaryValue = $value && $value->isPersisted() ? $value->getValue('id') : null;
@@ -270,7 +270,7 @@ abstract class HasOne extends Object implements IRelationshipContainer
 
 	/**
 	 * @param  IEntity|null $currentEntity
-	 * @return mixed
+	 * @return void
 	 */
-	abstract protected function initReverseRelationship($currentEntity);
+	abstract protected function initRelationship($currentEntity);
 }

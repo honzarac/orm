@@ -43,6 +43,9 @@ abstract class HasMany extends Object implements IRelationshipCollection
 	/** @var IEntity[] */
 	protected $removed = [];
 
+	/** @var IEntity[] */
+	protected $partialyLoaded = [];
+
 	/** @var IRepository */
 	protected $targetRepository;
 
@@ -122,7 +125,7 @@ abstract class HasMany extends Object implements IRelationshipCollection
 			unset($this->toAdd[$entityHash]);
 		} else {
 			$this->toRemove[$entityHash] = $entity;
-			unset($this->added[$entityHash]);
+			unset($this->added[$entityHash], $this->partialyLoaded[$entityHash]);
 		}
 
 		$this->updateRelationshipRemove($entity);
@@ -256,7 +259,7 @@ abstract class HasMany extends Object implements IRelationshipCollection
 	 */
 	public function initReverseRelationship(IEntity $entity)
 	{
-		$this->added[spl_object_hash($entity)] = $entity;
+		$this->partialyLoaded[spl_object_hash($entity)] = $entity;
 	}
 
 

@@ -20,7 +20,7 @@ class ManyHasMany extends HasMany
 			return iterator_to_array($this->getIterator());
 
 		} else {
-			return $this->added + $this->toAdd;
+			return $this->partialyLoaded + $this->added + $this->toAdd;
 		}
 	}
 
